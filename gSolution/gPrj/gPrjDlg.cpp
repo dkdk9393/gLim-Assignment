@@ -10,6 +10,7 @@
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
+#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console")
 #endif
 
 
@@ -52,6 +53,7 @@ END_MESSAGE_MAP()
 
 CgPrjDlg::CgPrjDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_GPRJ_DIALOG, pParent)
+	, m_nUserInput(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -59,12 +61,15 @@ CgPrjDlg::CgPrjDlg(CWnd* pParent /*=nullptr*/)
 void CgPrjDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Text(pDX, IDC_EDIT_NUM, m_nUserInput);
 }
 
 BEGIN_MESSAGE_MAP(CgPrjDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_BN_CLICKED(IDC_BTN_MAKECIRCLE, &CgPrjDlg::OnBnClickedBtnMakecircle)
+	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 
@@ -100,6 +105,11 @@ BOOL CgPrjDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
+	MoveWindow(0, 0, 1000, 800);
+	m_pDlgImage = new CDlgImage;
+	m_pDlgImage->Create(IDD_CDlgImage, this);
+	m_pDlgImage->ShowWindow(SW_SHOW);
+
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -153,3 +163,76 @@ HCURSOR CgPrjDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+
+
+void CgPrjDlg::OnBnClickedBtnMakecircle()
+{
+	UpdateData();
+	unsigned char* fm = (unsigned char*)m_pDlgImage->m_image.GetBits();
+
+	int nWidth = m_pDlgImage->m_image.GetWidth();
+	int nHeight = m_pDlgImage->m_image.GetHeight();
+	int nPitch = m_pDlgImage->m_image.GetPitch();
+
+	memset(fm, 0, nWidth * nHeight);
+
+	int centerX = rand() % nWidth;
+	int centerY = rand() % nHeight;
+
+	int radius = m_nUserInput;
+	if (radius == 0)
+		return;
+
+	CPoint topLeft(centerX - radius, centerY - radius);
+	CPoint bottomRight(centerX + radius, centerY + radius);
+	CRect rect(topLeft, bottomRight);
+	for (int j = rect.top; j < rect.bottom; j++) {
+		for (int i = rect.left; i < rect.right; i++) {
+			if (i < 0 || j < 0 || i >= nWidth || j >= nHeight) continue;
+			if ((centerX - i) * (centerX - i) + (centerY - j) * (centerY - j) <= radius * radius)
+				fm[j * nPitch + i] = rand() % 0xff;
+		}
+	}
+
+	m_pDlgImage->Invalidate();
+
+	int nTh = 0x80;
+	int nSumX = 0;
+	int nSumY = 0;
+	int nCount = 0;
+
+	for (int j = rect.top; j < rect.bottom; j++) {
+		for (int i = rect.left; i < rect.right; i++) {
+			if (i < 0 || j < 0 || i >= nWidth || j >= nHeight) continue;
+			if (fm[j * nPitch + i] > nTh) {
+				nSumX += i;
+				nSumY += j;
+				nCount++;
+			}
+		}
+	}
+	double dCenterX = (double)nSumX / nCount;
+	double dCenterY = (double)nSumY / nCount;
+
+	//std::cout << dCenterX << "\t" << dCenterY << std::endl;
+
+
+
+	m_pDlgImage->Invalidate();
+	m_pDlgImage->makeCircle = true;
+	m_pDlgImage->centerX = static_cast<int>(dCenterX);
+	m_pDlgImage->centerY = static_cast<int>(dCenterY);
+	m_pDlgImage->radius = radius;
+	m_pDlgImage->OnPaint();
+
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+
+}
+
+
+void CgPrjDlg::OnDestroy()
+{
+	CDialogEx::OnDestroy();
+	delete m_pDlgImage;
+	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+}
