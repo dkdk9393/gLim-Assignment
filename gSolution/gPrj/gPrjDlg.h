@@ -34,6 +34,11 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+
+private:
+	void makePattern(unsigned char* fm, int centerX, int centerY, int radius);
+	std::pair<double, double> calcCentroid(unsigned char* fm, int centerX, int centerY, int radius, int nTh);
+
 public:
 	int m_nUserInput;
 	afx_msg void OnBnClickedBtnMakecircle();

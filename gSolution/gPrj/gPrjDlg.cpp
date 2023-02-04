@@ -163,25 +163,17 @@ HCURSOR CgPrjDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-
-
-void CgPrjDlg::OnBnClickedBtnMakecircle()
+int dist(int centerX, int centerY, int x, int y)
 {
-	UpdateData();
-	unsigned char* fm = (unsigned char*)m_pDlgImage->m_image.GetBits();
+	return (centerX - x) * (centerX - x) + (centerY - y) * (centerY - y);
+}
+
+void CgPrjDlg::makePattern(unsigned char* fm, int centerX, int centerY, int radius)
+{
 
 	int nWidth = m_pDlgImage->m_image.GetWidth();
 	int nHeight = m_pDlgImage->m_image.GetHeight();
 	int nPitch = m_pDlgImage->m_image.GetPitch();
-
-	memset(fm, 0, nWidth * nHeight);
-
-	int centerX = rand() % nWidth;
-	int centerY = rand() % nHeight;
-
-	int radius = m_nUserInput;
-	if (radius == 0)
-		return;
 
 	CPoint topLeft(centerX - radius, centerY - radius);
 	CPoint bottomRight(centerX + radius, centerY + radius);
@@ -189,14 +181,24 @@ void CgPrjDlg::OnBnClickedBtnMakecircle()
 	for (int j = rect.top; j < rect.bottom; j++) {
 		for (int i = rect.left; i < rect.right; i++) {
 			if (i < 0 || j < 0 || i >= nWidth || j >= nHeight) continue;
-			if ((centerX - i) * (centerX - i) + (centerY - j) * (centerY - j) <= radius * radius)
+
+			if (dist(centerX, centerY, i, j) <= radius * radius)
 				fm[j * nPitch + i] = rand() % 0xff;
 		}
 	}
+}
 
-	m_pDlgImage->Invalidate();
+std::pair<double,double> CgPrjDlg::calcCentroid(unsigned char* fm, int centerX, int centerY, int radius, int nTh)
+{
 
-	int nTh = 0x80;
+	int nWidth = m_pDlgImage->m_image.GetWidth();
+	int nHeight = m_pDlgImage->m_image.GetHeight();
+	int nPitch = m_pDlgImage->m_image.GetPitch();
+
+	CPoint topLeft(centerX - radius, centerY - radius);
+	CPoint bottomRight(centerX + radius, centerY + radius);
+	CRect rect(topLeft, bottomRight);
+
 	int nSumX = 0;
 	int nSumY = 0;
 	int nCount = 0;
@@ -214,14 +216,44 @@ void CgPrjDlg::OnBnClickedBtnMakecircle()
 	double dCenterX = (double)nSumX / nCount;
 	double dCenterY = (double)nSumY / nCount;
 
-	//std::cout << dCenterX << "\t" << dCenterY << std::endl;
+
+	//Debug
+	std::cout << dCenterX << "\t" << dCenterY << std::endl;
+
+	return { dCenterX, dCenterY };
+}
+
+void CgPrjDlg::OnBnClickedBtnMakecircle()
+{
+	UpdateData();
+	unsigned char* fm = (unsigned char*)m_pDlgImage->m_image.GetBits();
+
+	int nWidth = m_pDlgImage->m_image.GetWidth();
+	int nHeight = m_pDlgImage->m_image.GetHeight();
+	int nPitch = m_pDlgImage->m_image.GetPitch();
+
+	//Fill Black
+	memset(fm, 0, nWidth * nHeight);
+
+	int centerX = rand() % nWidth;
+	int centerY = rand() % nHeight;
+
+	int radius = m_nUserInput;
+	if (radius == 0)
+		return;
 
 
-
+	makePattern(fm, centerX, centerY, radius);
 	m_pDlgImage->Invalidate();
+
+
+	std::pair<double, double> dCenter;
+	int nTh = 0x80;
+	dCenter = calcCentroid(fm, centerX, centerY, radius, nTh);
+
 	m_pDlgImage->makeCircle = true;
-	m_pDlgImage->centerX = static_cast<int>(dCenterX);
-	m_pDlgImage->centerY = static_cast<int>(dCenterY);
+	m_pDlgImage->centerX = static_cast<int>(dCenter.first);
+	m_pDlgImage->centerY = static_cast<int>(dCenter.second);
 	m_pDlgImage->radius = radius;
 	m_pDlgImage->OnPaint();
 

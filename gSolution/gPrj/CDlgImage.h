@@ -1,6 +1,11 @@
 ﻿#pragma once
 #include "afxdialogex.h"
 
+#define CROSS_LENGTH 10
+#define CROSS_DEPTH 3
+#define CIRCLE_LINE_DEPTH 5
+#define COLOR_YELLOW RGB(0xff, 0xff, 0)
+#define COLOR_RED RGB(0xff, 0,0)
 
 // CDlgImage 대화 상자
 
@@ -33,4 +38,5 @@ public:
 private:
 	void InitImage();
 	void drawCircle(CDC* pDC);
+	void drawCross(CDC* pDC);
 };

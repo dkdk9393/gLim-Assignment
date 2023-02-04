@@ -80,36 +80,44 @@ void CDlgImage::OnPaint()
 
 	if (makeCircle) {
 		drawCircle(&dc);
+		drawCross(&dc);
 	}
 }
 
+
 void CDlgImage::drawCircle(CDC *pDC)
 {
-
 	CPoint topLeft(centerX - radius, centerY - radius);
 	CPoint bottomRight(centerX + radius, centerY + radius);
 	CRect rect(topLeft, bottomRight);
 	
-
 	CPen circlePen;
-	circlePen.CreatePen(PS_SOLID, 5, RGB(0xff, 0xff, 0));
+	circlePen.CreatePen(PS_SOLID, CIRCLE_LINE_DEPTH, COLOR_YELLOW);
 	CPen* pOldPen = pDC->SelectObject(&circlePen);
 
 	CBrush brush;
 	brush.CreateStockObject(NULL_BRUSH);
 	CBrush* pOldBrush = pDC->SelectObject(&brush);
 	pDC->Ellipse(rect);
-	
+
 	pDC->SelectObject(pOldBrush);
+}
+
+void CDlgImage::drawCross(CDC* pDC)
+{
+
+	CPoint topLeft(centerX - radius, centerY - radius);
+	CPoint bottomRight(centerX + radius, centerY + radius);
+	CRect rect(topLeft, bottomRight);
 
 	CPen linePen;
-	linePen.CreatePen(PS_SOLID, 3, RGB(0xff, 0, 0));
-	pOldPen = pDC->SelectObject(&linePen);
+	linePen.CreatePen(PS_SOLID, CROSS_DEPTH, COLOR_RED);
+	CPen* pOldPen = pDC->SelectObject(&linePen);
 
-	pDC->MoveTo(centerX - 5, centerY);
-	pDC->LineTo(centerX + 5, centerY);
+	pDC->MoveTo(centerX - CROSS_LENGTH / 2, centerY);
+	pDC->LineTo(centerX + CROSS_LENGTH / 2, centerY);
 
-	pDC->MoveTo(centerX, centerY - 5);
-	pDC->LineTo(centerX, centerY + 5);
+	pDC->MoveTo(centerX, centerY - CROSS_LENGTH / 2);
+	pDC->LineTo(centerX, centerY + CROSS_LENGTH / 2);
 	pDC->SelectObject(pOldPen);
 }
